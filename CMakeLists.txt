@@ -73,8 +73,8 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 add_executable(path_tracker src/path_tracker_node.cpp)
-add_dependencies(path_tracker ${catkin_EXPORTED_TARGETS})
-target_link_libraries(path_tracker ${catkin_LIBRARIES})
+add_dependencies(path_tracker ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(path_tracker ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 include_directories(SYSTEM ${catkin_INCLUDE_DIRS} ${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 include_directories(include)
