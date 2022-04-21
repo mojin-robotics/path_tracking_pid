@@ -3,10 +3,13 @@
 #include <ros/console.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <tf2_ros/transform_listener.h>
+#include <costmap_2d/costmap_2d_ros.h>
+
 
 int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "path_tracker");
+  ros::NodeHandle nh;
   ROS_INFO("Hello Path Tracker");
 
   auto tplp = new path_tracking_pid::TrackingPidLocalPlanner();
@@ -18,9 +21,20 @@ int main(int argc, char *argv[])
   tf2_ros::Buffer tfBuffer;
   tf2_ros::TransformListener tfListener(tfBuffer);
 
-  std::vector<geometry_msgs::PoseStamped> plan = std::vector<geometry_msgs::PoseStamped>();
-  tplp->setPlan(plan);
+  costmap_2d::Costmap2DROS costmap("empty_costmap", tfBuffer);
+
+  auto receivePath = [&](const nav_msgs::PathConstPtr &path)
+  {
+    ROS_INFO_STREAM("Received a path of length " << path->poses.size());
+    // tplp->setPlan(path->poses);
+  };
+  auto sub = nh.subscribe<nav_msgs::Path>("path", 1, receivePath);
+
+  // std::vector<geometry_msgs::PoseStamped> plan = std::vector<geometry_msgs::PoseStamped>();
+  // tplp->setPlan(plan);
   // tplp->cancel();
+
+  tplp->initialize("path_tracker", &tfBuffer, &costmap);
 
   ros::spin();
 
