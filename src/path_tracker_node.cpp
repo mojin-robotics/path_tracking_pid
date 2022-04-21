@@ -36,6 +36,19 @@ int main(int argc, char *argv[])
 
   tplp->initialize("path_tracker", &tfBuffer, &costmap);
 
+  auto timerCallback = [&](const ros::TimerEvent &)
+  {
+    ROS_INFO("Tick");
+    /* TODO:
+     * - Set up a Twist publisher
+     * - Get the current robot pose from TF
+     * - Calculate velocity from diff with previous pose
+     * - publish the Twist
+     */
+    // tplp->computeVelocityCommands();
+  };
+  ros::Timer timer = nh.createTimer(ros::Duration(0.1), timerCallback);
+
   ros::spin();
 
   ROS_INFO("Bye-bye Path Tracker");
