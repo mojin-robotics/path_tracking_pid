@@ -21,7 +21,6 @@ int main(int argc, char *argv[])
 
   tf2_ros::Buffer tfBuffer;
   tf2_ros::TransformListener tfListener(tfBuffer);
-  // tf2::TransformListener listener;
 
   costmap_2d::Costmap2DROS costmap("empty_costmap", tfBuffer);
 
@@ -32,8 +31,7 @@ int main(int argc, char *argv[])
   map_frame_ = costmap.getGlobalFrameID(); //TODO: Not sure if this works if we init the costmap like this
   ROS_INFO_STREAM("base_link_frame=" << base_link_frame_ << ", map_frame=" << map_frame_);
 
-  tf2::Stamped<tf2::Transform> prev_transform;
-  // listener.lookupTransform(map_frame_, base_link_frame_, ros::Time(0), prev_transform);
+  bool has_plan = false;
 
   ros::Publisher cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("cmd_vel", 5);
 
@@ -41,6 +39,7 @@ int main(int argc, char *argv[])
   {
     ROS_INFO_STREAM("Received a path of length " << path->poses.size());
     tplp->setPlan(path->poses);
+    has_plan = true;
   };
   auto sub = nh.subscribe<nav_msgs::Path>("path", 1, receivePath);
 
@@ -49,22 +48,25 @@ int main(int argc, char *argv[])
   auto timerCallback = [&](const ros::TimerEvent &)
   {
     ROS_INFO("Tick");
-    /* TODO:
-     * - Get the current robot pose from TF
-     * - Calculate velocity from diff with previous pose
-     * - publish the Twist
-     */
 
-    geometry_msgs::TwistStamped cmd_vel;
-    geometry_msgs::PoseStamped current_pose;
-    geometry_msgs::TwistStamped velocity;
-    std::string message;
+    bool goal_reached = tplp->isGoalReached(0.0, 0.0); // The tolerances are ignored by implementation
+    if (has_plan && goal_reached)
+    {
+      geometry_msgs::TwistStamped cmd_vel;
+      geometry_msgs::PoseStamped current_pose;
+      geometry_msgs::TwistStamped velocity;
+      std::string message;
 
-    tplp->computeVelocityCommands(current_pose, velocity, cmd_vel, message);
+      tplp->computeVelocityCommands(current_pose, velocity, cmd_vel, message); // The current_pose and velocty are ignored by implementation
 
-    ROS_INFO_COND(!message.empty(), message.c_str());
+      ROS_INFO_COND(!message.empty(), message.c_str());
 
-    cmd_vel_pub.publish(cmd_vel.twist);
+      cmd_vel_pub.publish(cmd_vel.twist);
+    }
+    else
+    {
+      ROS_INFO_STREAM("Nothing to do: we have " << has_plan << " plan and goal reached = " << goal_reached);
+    }
   };
   ros::Timer timer = nh.createTimer(ros::Duration(0.1), timerCallback);
 
