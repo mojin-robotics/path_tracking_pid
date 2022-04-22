@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <geometry_msgs/PoseStamped.h>
+// #include <tf2/transform_listener.h>
 #include <tf2_ros/transform_listener.h>
 #include <costmap_2d/costmap_2d_ros.h>
 
@@ -20,19 +21,28 @@ int main(int argc, char *argv[])
 
   tf2_ros::Buffer tfBuffer;
   tf2_ros::TransformListener tfListener(tfBuffer);
+  // tf2::TransformListener listener;
 
   costmap_2d::Costmap2DROS costmap("empty_costmap", tfBuffer);
+
+  std::string map_frame_;
+  std::string base_link_frame_;
+
+  nh.param<std::string>("base_link_frame", base_link_frame_, "base_link");
+  map_frame_ = costmap.getGlobalFrameID(); //TODO: Not sure if this works if we init the costmap like this
+  ROS_INFO_STREAM("base_link_frame=" << base_link_frame_ << ", map_frame=" << map_frame_);
+
+  tf2::Stamped<tf2::Transform> prev_transform;
+  // listener.lookupTransform(map_frame_, base_link_frame_, ros::Time(0), prev_transform);
+
+  ros::Publisher cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("cmd_vel", 5);
 
   auto receivePath = [&](const nav_msgs::PathConstPtr &path)
   {
     ROS_INFO_STREAM("Received a path of length " << path->poses.size());
-    // tplp->setPlan(path->poses);
+    tplp->setPlan(path->poses);
   };
   auto sub = nh.subscribe<nav_msgs::Path>("path", 1, receivePath);
-
-  // std::vector<geometry_msgs::PoseStamped> plan = std::vector<geometry_msgs::PoseStamped>();
-  // tplp->setPlan(plan);
-  // tplp->cancel();
 
   tplp->initialize("path_tracker", &tfBuffer, &costmap);
 
@@ -40,16 +50,27 @@ int main(int argc, char *argv[])
   {
     ROS_INFO("Tick");
     /* TODO:
-     * - Set up a Twist publisher
      * - Get the current robot pose from TF
      * - Calculate velocity from diff with previous pose
      * - publish the Twist
      */
-    // tplp->computeVelocityCommands();
+
+    geometry_msgs::TwistStamped cmd_vel;
+    geometry_msgs::PoseStamped current_pose;
+    geometry_msgs::TwistStamped velocity;
+    std::string message;
+
+    tplp->computeVelocityCommands(current_pose, velocity, cmd_vel, message);
+
+    ROS_INFO_COND(!message.empty(), message.c_str());
+
+    cmd_vel_pub.publish(cmd_vel.twist);
   };
   ros::Timer timer = nh.createTimer(ros::Duration(0.1), timerCallback);
 
   ros::spin();
+
+  tplp->cancel();
 
   ROS_INFO("Bye-bye Path Tracker");
 
