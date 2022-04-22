@@ -38,8 +38,7 @@ int main(int argc, char *argv[])
   auto receivePath = [&](const nav_msgs::PathConstPtr &path)
   {
     ROS_INFO_STREAM("Received a path of length " << path->poses.size());
-    tplp->setPlan(path->poses);
-    has_plan = true;
+    has_plan = tplp->setPlan(path->poses);
   };
   auto sub = nh.subscribe<nav_msgs::Path>("path", 1, receivePath);
 
@@ -47,10 +46,8 @@ int main(int argc, char *argv[])
 
   auto timerCallback = [&](const ros::TimerEvent &)
   {
-    ROS_INFO("Tick");
-
     bool goal_reached = tplp->isGoalReached(0.0, 0.0); // The tolerances are ignored by implementation
-    if (has_plan && goal_reached)
+    if (has_plan && !goal_reached)
     {
       geometry_msgs::TwistStamped cmd_vel;
       geometry_msgs::PoseStamped current_pose;
@@ -70,11 +67,10 @@ int main(int argc, char *argv[])
   };
   ros::Timer timer = nh.createTimer(ros::Duration(0.1), timerCallback);
 
-  ros::spin();
-
-  tplp->cancel();
-
-  ROS_INFO("Bye-bye Path Tracker");
+  while (ros::ok())
+  {
+    ros::spinOnce();
+  }
 
   return 0;
 }
