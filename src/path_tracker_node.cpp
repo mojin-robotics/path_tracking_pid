@@ -62,7 +62,13 @@ int main(int argc, char *argv[])
     }
     else
     {
-      ROS_INFO_STREAM("Nothing to do: we have " << has_plan << " plan and goal reached = " << goal_reached);
+      ROS_DEBUG_STREAM("Nothing to do: we have " << has_plan << " plan and goal reached = " << goal_reached);
+    }
+
+    if(has_plan && goal_reached)
+    {
+      has_plan = false;
+      ROS_INFO("Goal reached");
     }
   };
   ros::Timer timer = nh.createTimer(ros::Duration(0.1), timerCallback);
