@@ -15,8 +15,6 @@ int main(int argc, char *argv[])
 
   auto tplp = new path_tracking_pid::TrackingPidLocalPlanner();
 
-  // Call initialize with empty costmap that we don't update
-  // Subscribe to Paths, convert those to vector of PoseStamped for setPlan
   // Call computeVelocities at some configurable rate?
 
   tf2_ros::Buffer tfBuffer;
