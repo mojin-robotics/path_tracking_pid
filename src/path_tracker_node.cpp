@@ -54,17 +54,27 @@ int main(int argc, char *argv[])
     {
       ROS_INFO_STREAM("Received path of length " << path->waypoints.poses.size() << " with target at index " << path->target_index);
       // Starting and Ending iterators
-      auto start = path->waypoints.poses.begin(); // TODO: offset to skip the poses behind the robot.
+      int skip = 15;
+      auto start = path->waypoints.poses.begin() + skip; // TODO: offset to skip the poses behind the robot.
       auto end = path->waypoints.poses.begin() + path->target_index + 1;
 
-      std::vector<geometry_msgs::PoseStamped> sliced_path(path->target_index + 1);
+      std::vector<geometry_msgs::PoseStamped> sliced_path(path->target_index - skip + 1);
       copy(start, end, sliced_path.begin());
 
-      has_plan = tplp->setPlan(sliced_path);
+      if (sliced_path.size())
+      {
+        has_plan = tplp->setPlan(sliced_path);
+      }
+      else
+      {
+        ROS_WARN_STREAM("Ignoring sliced path of length " << sliced_path.size());
+        tplp->cancel();
+      }
     }
     else
     {
       ROS_WARN_STREAM("Ignoring path of length " << path->waypoints.poses.size());
+      tplp->cancel();
     }
   };
   auto segment_sub = nh.subscribe<amr_road_network_msgs::SegmentPath>("segment_path", 1, receiveSegmentPath);
