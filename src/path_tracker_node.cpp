@@ -2,7 +2,7 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <geometry_msgs/PoseStamped.h>
-// #include <tf2/transform_listener.h>
+#include <amr_road_network_msgs/SegmentPath.h>
 #include <tf2_ros/transform_listener.h>
 #include <costmap_2d/costmap_2d_ros.h>
 
@@ -42,10 +42,32 @@ int main(int argc, char *argv[])
     }
     else
     {
-      ROS_WARN_STREAM("Ignoring path of length " << path->poses.size());
+      ROS_WARN_STREAM("Ignoring path of length, cancelling current" << path->poses.size());
+      tplp->cancel();
     }
   };
-  auto sub = nh.subscribe<nav_msgs::Path>("path", 1, receivePath);
+  auto path_sub = nh.subscribe<nav_msgs::Path>("path", 1, receivePath);
+
+  auto receiveSegmentPath = [&](const amr_road_network_msgs::SegmentPathConstPtr &path)
+  {
+    if (path->waypoints.poses.size())
+    {
+      ROS_INFO_STREAM("Received path of length " << path->waypoints.poses.size() << " with target at index " << path->target_index);
+      // Starting and Ending iterators
+      auto start = path->waypoints.poses.begin(); // TODO: offset to skip the poses behind the robot.
+      auto end = path->waypoints.poses.begin() + path->target_index + 1;
+
+      std::vector<geometry_msgs::PoseStamped> sliced_path(path->target_index + 1);
+      copy(start, end, sliced_path.begin());
+
+      has_plan = tplp->setPlan(sliced_path);
+    }
+    else
+    {
+      ROS_WARN_STREAM("Ignoring path of length " << path->waypoints.poses.size());
+    }
+  };
+  auto segment_sub = nh.subscribe<amr_road_network_msgs::SegmentPath>("segment_path", 1, receiveSegmentPath);
 
   tplp->initialize("path_tracker", &tfBuffer, &costmap);
 
