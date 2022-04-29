@@ -35,8 +35,15 @@ int main(int argc, char *argv[])
 
   auto receivePath = [&](const nav_msgs::PathConstPtr &path)
   {
-    ROS_INFO_STREAM("Received a path of length " << path->poses.size());
-    has_plan = tplp->setPlan(path->poses);
+    if (path->poses.size())
+    {
+      ROS_INFO_STREAM("Setting path of length " << path->poses.size());
+      has_plan = tplp->setPlan(path->poses);
+    }
+    else
+    {
+      ROS_WARN_STREAM("Ignoring path of length " << path->poses.size());
+    }
   };
   auto sub = nh.subscribe<nav_msgs::Path>("path", 1, receivePath);
 
