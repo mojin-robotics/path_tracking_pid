@@ -11,6 +11,7 @@ int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "path_tracker");
   ros::NodeHandle nh;
+  ros::NodeHandle pnh("~");
   ROS_INFO("Hello Path Tracker");
 
   auto tplp = new path_tracking_pid::TrackingPidLocalPlanner();
@@ -47,6 +48,7 @@ int main(int argc, char *argv[])
     }
   };
   auto path_sub = nh.subscribe<nav_msgs::Path>("path", 1, receivePath);
+  auto sliced_path_pub = pnh.advertise<nav_msgs::Path>("sliced_path", 1);
 
   auto receiveSegmentPath = [&](const amr_road_network_msgs::SegmentPathConstPtr &path)
   {
@@ -65,6 +67,10 @@ int main(int argc, char *argv[])
 
       std::vector<geometry_msgs::PoseStamped> sliced_path(end - start);
       copy(start, end, sliced_path.begin());
+      nav_msgs::Path sliced_nav_path;
+      sliced_nav_path.header = path->waypoints.header;
+      sliced_nav_path.poses = sliced_path;
+      sliced_path_pub.publish(sliced_nav_path); 
 
       if (sliced_path.size())
       {
