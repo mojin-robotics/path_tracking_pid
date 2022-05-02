@@ -68,14 +68,20 @@ int main(int argc, char *argv[])
       }
       else
       {
-        ROS_WARN_STREAM("Ignoring sliced path of length " << sliced_path.size());
-        tplp->cancel();
+        ROS_WARN_STREAM("Ignoring sliced SegmentPath of length " << sliced_path.size());
+        if (has_plan)
+        {
+          tplp->cancel();
+        }
       }
     }
     else
     {
-      ROS_WARN_STREAM("Ignoring path of length " << path->waypoints.poses.size());
-      tplp->cancel();
+      ROS_WARN_STREAM("Ignoring SegmentPath of length " << path->waypoints.poses.size());
+      if(has_plan)
+      {
+        tplp->cancel();
+      }
     }
   };
   auto segment_sub = nh.subscribe<amr_road_network_msgs::SegmentPath>("segment_path", 1, receiveSegmentPath);
