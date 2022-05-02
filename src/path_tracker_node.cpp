@@ -59,9 +59,11 @@ int main(int argc, char *argv[])
       // Starting and Ending iterators
       int skip = 15;
       auto start = path->waypoints.poses.begin(); // TODO: offset to skip the poses behind the robot.
+      int start_index = 0;
       if(path->target_index > skip)
       {
         start = start + skip;
+        start_index = start_index + skip;
       }
       auto end = path->waypoints.poses.begin() + path->target_index + 1;
 
@@ -74,6 +76,7 @@ int main(int argc, char *argv[])
 
       if (sliced_path.size())
       {
+        ROS_INFO_STREAM("Setting sliced plan of length " << sliced_path.size() << " starting at " << start_index);
         has_plan = tplp->setPlan(sliced_path);
       }
       else
