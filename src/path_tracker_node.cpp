@@ -50,9 +50,10 @@ int main(int argc, char *argv[])
 
   auto receiveSegmentPath = [&](const amr_road_network_msgs::SegmentPathConstPtr &path)
   {
+    ROS_INFO_STREAM("Received SegmentPath");
     if (path->waypoints.poses.size())
     {
-      ROS_INFO_STREAM("Received path of length " << path->waypoints.poses.size() << " with target at index " << path->target_index);
+      ROS_INFO_STREAM("Received SegmentPath of length " << path->waypoints.poses.size() << " with target at index " << path->target_index);
       // Starting and Ending iterators
       int skip = 15;
       auto start = path->waypoints.poses.begin() + skip; // TODO: offset to skip the poses behind the robot.
