@@ -56,10 +56,14 @@ int main(int argc, char *argv[])
       ROS_INFO_STREAM("Received SegmentPath of length " << path->waypoints.poses.size() << " with target at index " << path->target_index);
       // Starting and Ending iterators
       int skip = 15;
-      auto start = path->waypoints.poses.begin() + skip; // TODO: offset to skip the poses behind the robot.
+      auto start = path->waypoints.poses.begin(); // TODO: offset to skip the poses behind the robot.
+      if(path->target_index > skip)
+      {
+        start = start + skip;
+      }
       auto end = path->waypoints.poses.begin() + path->target_index + 1;
 
-      std::vector<geometry_msgs::PoseStamped> sliced_path(path->target_index - skip + 1);
+      std::vector<geometry_msgs::PoseStamped> sliced_path(end - start);
       copy(start, end, sliced_path.begin());
 
       if (sliced_path.size())
