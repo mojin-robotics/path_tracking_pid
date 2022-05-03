@@ -113,18 +113,18 @@ int main(int argc, char *argv[])
     if (path->waypoints.poses.size())
     {
       ROS_INFO_STREAM("Received SegmentPath of length " << path->waypoints.poses.size() << " with target at index " << path->target_index);
-      // Starting and Ending iterators
-      int skip = 15;
-      auto start = path->waypoints.poses.begin(); // TODO: offset to skip the poses behind the robot.
-
-
+      
       geometry_msgs::PoseStamped current_pose;
       if (!costmap.getRobotPose(current_pose))
       {
         ROS_WARN("Could not retrieve up to date robot pose from costmap!");
         return;
       }
-      int start_index = closestIndex(current_pose, path->waypoints.poses);
+
+      // Starting and Ending iterators
+      int skip = closestIndex(current_pose, path->waypoints.poses);
+      auto start = path->waypoints.poses.begin();
+      int start_index = 0;
 
       if(path->target_index > skip)
       {
@@ -148,19 +148,19 @@ int main(int argc, char *argv[])
       else
       {
         ROS_WARN_STREAM("Ignoring sliced SegmentPath of length " << sliced_path.size());
-        // if (has_plan)
-        // {
-        //   tplp->cancel();
-        // }
+        if (has_plan)
+        {
+          tplp->cancel();
+        }
       }
     }
     else
     {
       ROS_WARN_STREAM("Ignoring SegmentPath of length " << path->waypoints.poses.size());
-      // if(has_plan)
-      // {
-      //   tplp->cancel();
-      // }
+      if(has_plan)
+      {
+        tplp->cancel();
+      }
     }
   };
   auto segment_sub = nh.subscribe<amr_road_network_msgs::SegmentPath>("segment_path", 1, receiveSegmentPath);
@@ -196,10 +196,9 @@ int main(int argc, char *argv[])
   };
   ros::Timer timer = nh.createTimer(ros::Duration(0.1), timerCallback);
 
-  while (ros::ok())
-  {
-    ros::spinOnce();
-  }
+  ros::AsyncSpinner spinner(2);
+  spinner.start();
+  ros::waitForShutdown();
 
   return 0;
 }
