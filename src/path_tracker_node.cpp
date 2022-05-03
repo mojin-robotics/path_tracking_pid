@@ -5,7 +5,64 @@
 #include <amr_road_network_msgs/SegmentPath.h>
 #include <tf2_ros/transform_listener.h>
 #include <costmap_2d/costmap_2d_ros.h>
+#include <tf/tf.h>
+#include <tf2/LinearMath/Quaternion.h>
 
+inline double translation_distance(const geometry_msgs::PoseStamped a, const geometry_msgs::PoseStamped b)
+{
+  assert(a.header.frame_id == b.header.frame_id);
+  return hypot(b.pose.position.x - a.pose.position.x, b.pose.position.y - a.pose.position.y);
+}
+
+inline double calculate_yaw(geometry_msgs::Quaternion quaternion)
+{
+  // calculate theta
+  double roll, pitch, yaw;
+  tf::Quaternion q = tf::Quaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+  tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
+  return yaw;
+}
+
+inline double rotation_distance(const geometry_msgs::PoseStamped a, const geometry_msgs::PoseStamped b)
+{
+  assert(a.header.frame_id == b.header.frame_id);
+  return calculate_yaw(b.pose.orientation) - calculate_yaw(a.pose.orientation);
+}
+
+uint closestIndex(geometry_msgs::PoseStamped global_pose_msg, std::vector<geometry_msgs::PoseStamped> global_plan_)
+{
+  // Step 1: Find the (index of the) waypoint closest to our current pose (global_pose_msg).
+  //  Stop searching further when the distance starts increasing
+
+  size_t start_index = 0;
+
+  // find waypoint closest to robot position
+  double min_dist = std::numeric_limits<double>::max();
+  for (size_t i = 0; i < global_plan_.size(); i++)
+  {
+    auto new_trans_dist = translation_distance(global_pose_msg, global_plan_[i]);
+    auto new_rot_dist = rotation_distance(global_pose_msg, global_plan_[i]);
+    ROS_DEBUG_STREAM("extractWaypoints: i=" << i << ", new_trans_distance = " << new_trans_dist << ", new_rot_distance = " << new_rot_dist << ", min_dist = " << min_dist);
+    if (new_trans_dist <= min_dist)
+    {
+      if (abs(new_rot_dist) < 0.1) // goal_tolerance_rotation_ was a variable
+      {
+        start_index = i;
+        min_dist = new_trans_dist;
+      }
+      else
+      {
+        ROS_DEBUG_STREAM("Point " << i << " at x=" << global_plan_[i].pose.position.x << ", y=" << global_plan_[i].pose.position.y << " is close in translation but has a different orientation (dist:" << new_rot_dist << ") so not actually close");
+      }
+    }
+    else
+    {
+      ROS_DEBUG_STREAM("Path poses are getting further away, so closest has been found");
+      break; // Distance is getting bigger again, stop searching
+    }
+  }
+  return start_index;
+}
 
 int main(int argc, char *argv[])
 {
@@ -59,7 +116,16 @@ int main(int argc, char *argv[])
       // Starting and Ending iterators
       int skip = 15;
       auto start = path->waypoints.poses.begin(); // TODO: offset to skip the poses behind the robot.
-      int start_index = 0;
+
+
+      geometry_msgs::PoseStamped current_pose;
+      if (!costmap.getRobotPose(current_pose))
+      {
+        ROS_WARN("Could not retrieve up to date robot pose from costmap!");
+        return;
+      }
+      int start_index = closestIndex(current_pose, path->waypoints.poses);
+
       if(path->target_index > skip)
       {
         start = start + skip;
