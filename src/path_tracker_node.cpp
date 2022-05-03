@@ -109,10 +109,10 @@ int main(int argc, char *argv[])
 
   auto receiveSegmentPath = [&](const amr_road_network_msgs::SegmentPathConstPtr &path)
   {
-    ROS_INFO_STREAM("Received SegmentPath");
+    ROS_DEBUG_STREAM("Received SegmentPath");
     if (path->waypoints.poses.size())
     {
-      ROS_INFO_STREAM("Received SegmentPath of length " << path->waypoints.poses.size() << " with target at index " << path->target_index);
+      ROS_DEBUG_STREAM("Received SegmentPath of length " << path->waypoints.poses.size() << " with target at index " << path->target_index);
       
       geometry_msgs::PoseStamped current_pose;
       if (!costmap.getRobotPose(current_pose))
@@ -132,6 +132,7 @@ int main(int argc, char *argv[])
         start_index = start_index + skip;
       }
       auto end = path->waypoints.poses.begin() + path->target_index + 1;
+      int end_index = path->target_index + 1;
 
       std::vector<geometry_msgs::PoseStamped> sliced_path(end - start);
       copy(start, end, sliced_path.begin());
@@ -142,7 +143,7 @@ int main(int argc, char *argv[])
 
       if (sliced_path.size())
       {
-        ROS_INFO_STREAM("Setting sliced plan of length " << sliced_path.size() << " starting at " << start_index);
+        ROS_INFO_STREAM("Setting path of length " << sliced_path.size() << " from " << path->waypoints.poses.size() << " waypoints, start at " << start_index << ", end at " << end_index);
         has_plan = tplp->setPlan(sliced_path);
       }
       else
