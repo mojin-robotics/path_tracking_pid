@@ -7,6 +7,7 @@ find_package(catkin REQUIRED
   COMPONENTS
     actionlib
     actionlib_msgs
+    amr_road_network_msgs
     dynamic_reconfigure
     geometry_msgs
     mbf_costmap_core
@@ -46,6 +47,7 @@ catkin_package(
   CATKIN_DEPENDS
     actionlib
     actionlib_msgs
+    amr_road_network_msgs
     dynamic_reconfigure
     geometry_msgs
     mbf_costmap_core
@@ -61,16 +63,20 @@ catkin_package(
 )
 
 add_library(${PROJECT_NAME}
-  src/${PROJECT_NAME}_local_planner.cpp
-  src/controller.cpp
   src/calculations.cpp
+  src/controller.cpp
   src/details/derivative.cpp
   src/details/integral.cpp
   src/details/second_order_lowpass.cpp
+  src/${PROJECT_NAME}_local_planner.cpp
   src/visualization.cpp
 )
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+
+add_executable(path_tracker src/path_tracker_node.cpp)
+add_dependencies(path_tracker ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(path_tracker ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 include_directories(SYSTEM ${catkin_INCLUDE_DIRS} ${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 include_directories(include)
@@ -84,6 +90,7 @@ roslint_add_test()
 
 install(
   TARGETS
+    path_tracker
     ${PROJECT_NAME}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -108,7 +115,7 @@ install(
 )
 
 if(CATKIN_ENABLE_TESTING)
-  add_rostest(test/test_path_tracking_pid.test ARGS rviz:=false reconfigure:=false)
+  add_rostest(test/test_${PROJECT_NAME}.test ARGS rviz:=false reconfigure:=false)
   catkin_add_gtest(unittests
     test/unittests/test_calculations.cpp
     test/unittests/test_derivative.cpp

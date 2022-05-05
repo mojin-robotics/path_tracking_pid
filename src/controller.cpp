@@ -511,6 +511,16 @@ Controller::UpdateResult Controller::update(
   // Force target_end_x_vel at the very end of the path
   // Or when the end velocity is reached.
   // Warning! If target_end_x_vel == 0 and min_vel = 0 then the robot might not reach end pose
+  ROS_DEBUG_STREAM("distance_to_goal: " << distance_to_goal);
+  ROS_DEBUG_STREAM("target_end_x_vel: " << target_end_x_vel);
+  ROS_DEBUG_STREAM("new_x_vel: " << new_x_vel);
+  ROS_DEBUG_STREAM("controller_state_.end_phase_enabled: " << controller_state_.end_phase_enabled);
+  ROS_DEBUG_STREAM("VELOCITY_EPS: " << VELOCITY_EPS);
+  ROS_DEBUG_STREAM("distance_to_goal == 0.0: " << distance_to_goal << " == 0 : " << (distance_to_goal == 0.0));
+  ROS_DEBUG_STREAM("target_end_x_vel >= VELOCITY_EPS: " << target_end_x_vel << " >= " << VELOCITY_EPS << ". : " << (target_end_x_vel >= VELOCITY_EPS));
+  ROS_DEBUG_STREAM("new_x_vel >= target_end_x_vel - VELOCITY_EPS: " << new_x_vel << " >= " << (target_end_x_vel - VELOCITY_EPS) << ". : " << (new_x_vel >= target_end_x_vel - VELOCITY_EPS));
+  ROS_DEBUG("----------");
+
   if (
     (distance_to_goal == 0.0 && target_end_x_vel >= VELOCITY_EPS) ||
     (controller_state_.end_phase_enabled && new_x_vel >= target_end_x_vel - VELOCITY_EPS &&
