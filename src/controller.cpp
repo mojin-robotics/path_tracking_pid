@@ -517,8 +517,6 @@ Controller::UpdateResult Controller::update(
   ROS_DEBUG_STREAM("controller_state_.end_phase_enabled: " << controller_state_.end_phase_enabled);
   ROS_DEBUG_STREAM("VELOCITY_EPS: " << VELOCITY_EPS);
   ROS_DEBUG_STREAM("distance_to_goal == 0.0: " << distance_to_goal << " == 0 : " << (distance_to_goal == 0.0));
-  ROS_DEBUG_STREAM("target_end_x_vel >= VELOCITY_EPS: " << target_end_x_vel << " >= " << VELOCITY_EPS << ". : " << (target_end_x_vel >= VELOCITY_EPS));
-  ROS_DEBUG_STREAM("new_x_vel >= target_end_x_vel - VELOCITY_EPS: " << new_x_vel << " >= " << (target_end_x_vel - VELOCITY_EPS) << ". : " << (new_x_vel >= target_end_x_vel - VELOCITY_EPS));
   ROS_DEBUG("----------");
 
   if (
